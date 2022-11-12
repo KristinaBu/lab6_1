@@ -73,12 +73,95 @@ void PrintTabl(struct I_print i_prn[], int k) {
     }
 }
 
-int ItogPrint() {
+
+
+
+int nomn=0;
+int n[]={9,0,0,0}; //склад количеств прямоугольников и трапеций при вычислении сумм
+double EpsMas[]={0.01, 0.001, 0.0001, 0.00001, 0.000001};//склад точностей
+
+typedef double (*TPF)(double); //указатель на подынтегральную функция для х0
+typedef double (*for_eps)(TPF f, double a, double b, double dx, int* n);
+
+//подынтегральные функции для х0:
+double f_ot_x(double x0){
+    return x0*x0;
+}
+
+// f - ловушка-шаблон для вызываемой в intrect функции, которая
+//будет использовать полученные тут значения. Принимает дабл, выдает дабл
+double IntRect(TPF f, double a, double b, double dx, int* n){
+
+    double sumR=0;
+    int nn=0;
+    for(double x0=a;x0<b;x0=x0+dx){
+        sumR=sumR+f_ot_x(x0+dx/2);
+        nn++;
+    }
+    sumR=sumR*dx;
+
+    //f(nn);
+    nomn=nn;
+    n[0]=nomn;
+    //printf("%d %d\n",nn,n[0]);
+    return sumR; //
+}
+
+double IntTrap(TPF f, double a, double b, double dx, int* n){
+    double summT=0;
+    int nn=0; //количество итераций !!!!!!!!!!!!!!!!!!! замена на фор и вывод ост суммы
+    for(double x0=a;x0<b;x0=x0+dx){
+        summT=summT+(f_ot_x(x0)+ f_ot_x(x0+dx))/2;
+        nn++;
+    }
+    summT=summT*dx;
+    //f(nn);
+    n[0]=nomn;
+    //printf("%d %d\n",nn,n[0]);
+    return summT;
+}
+
+
+double for_IntRectrap(double nn){
+    printf("nn %lf\n",nn);
+}//Убрать на Ф от х0
+
+//рассчет оределенного интеграла, классическая формула
+double integr(double a,double b){
+    return (double)(fabs(pow(b,3)-pow(a,3))/(double)(3));
+}
+
+
+
+
+//dx=(a-b)/n
+double Epsilon(for_eps q,int epsnom){ //указатель на функцию суммы прямоугольников или трапеций, epsnom-номер точности в массиве
+    double i1=0,i2=0,dx1=1;
+    i1=q(for_IntRectrap,1,3,dx1,n); // сумма интеграла с дельта
+    //i1=q(for_IntRectrap,1,3,dx1/2,n); //сумма интеграла с дельта/2
+
+    //int k=0;
+    while ((fabs(i1-i2)/3)>EpsMas[epsnom]){
+        i1=i2;
+        dx1=dx1/2;
+        i2=q(for_IntRectrap,1,3,dx1,n);//призыв нового исчисления интегралов, но с делением дельта на 2
+        //k=k+1;
+        //printf("k %d\n",k);
+
+    } //эпсилон в шаге dx/2;
+    return i2;//вывод суммы с нужной точностью
+}//рассчет точности
+
+
+
+
+int ItogPrint_Rect() {
     setlocale(LC_ALL, "Russian");
+    printf("Прямоугольники\n");
     struct I_print a;
-    a.name = (char *) "y=x";
+    a.name = (char *) "y=x*x";
     a.i_sum = 1;
-    a.i_toch = 2;
+    a.i_toch = integr(1,3);
     a.n = 3;
 
     struct I_print b;
@@ -108,89 +191,56 @@ int ItogPrint() {
     PrintTabl(f, 4);
     return 0;
 }
-int n[]={0,0,0,0};
+int ItogPrint_Trap() {
+    setlocale(LC_ALL, "Russian");
+    printf("Трапеции\n");
+    struct I_print a;
+    a.name = (char *) "y=x*x";
+    a.i_sum = 1;
+    a.i_toch = integr(1,3);
+    a.n = 3;
 
-typedef double (*TPF)(double); //подынтегр функция
+    struct I_print b;
+    b.name = (char *) "y=sin(22x)";
+    b.i_sum = 4;
+    b.i_toch = 5;
+    b.n = 6;
 
-double f_ot_x(double x0){
-    return x0*x0;
-}
+    struct I_print c;
+    c.name = (char *) "y=x^4 ";
+    c.i_sum = 4;
+    c.i_toch = 5;
+    c.n = 6555;
 
-//интеграл прямоугольников
-// f - ловушка-шаблон для вызываемой в intrect функции, которая
-//будет использовать полученные тут значения. Принимает дабл, выдает дабл
-//вывод суммы для шаблона
-double IntRect(TPF f, double a, double b, double dx, int* n){
+    struct I_print d;
+    d.name = (char *) "y=arctg(x))";
+    d.i_sum = 4;
+    d.i_toch = 5;
+    d.n = 6;
 
-    double sumR=0;
-    int nn=0;
-    for(double x0=a;x0<b;x0=x0+dx){
-        sumR=sumR+f_ot_x(x0+dx/2);
-        nn++;
-    }
-    sumR=sumR*dx;
+    struct I_print f[4];
+    f[0] = a;
+    f[1] = b;
+    f[2] = c;
+    f[3] = d;
 
-    f(nn);
-    return printf("R %d\n",sumR); //
-}
-
-double for_IntRectrap(double nn){
-    printf("nn %lf\n",nn);
-}
-
-//рассчет оределенного интеграла, классика
-double integr(double a,double b){
-    return (double)(fabs(pow(b,3)-pow(a,3))/(double)(3));
-}
-double EpsMas[]={0.01, 0.001, 0.0001, 0.00001, 0.000001};
-
-
-//dx=(a-b)/n
-//Рассчет шага, i1,i2 - уже полученные интегралы со своими шагами
-void Epsilon(int epsnom){
-    int r;
-    double i1,i2,dx1=1;
-    i1=IntRect(for_IntRectrap,1,3,dx1,n);
-    i1=IntRect(for_IntRectrap,1,3,dx1/2,n);
-
-    int k=0;
-    while ((fabs(i1-i2)/3)>EpsMas[epsnom]){
-        i1=i2;
-        dx1=dx1/2;
-        i1=IntRect(for_IntRectrap,1,3,dx1,n);
-        i1=IntRect(for_IntRectrap,1,3,dx1/2,n);
-        k=k+1;
-        printf("k %d\n",k);
-        //призыв нового исчисления интегралов, но с делением дельта на 2
-    } //эпсилон в шаге dx/2; epsnom - номер точности в массиве
-
-}
-
-
-double IntTrap(TPF f, double a, double b, double dx, int* n){
-    double summT=0;
-    int nn=0;
-    for(double x0=a;x0<b;x0=x0+dx){
-        summT=summT+(f_ot_x(x0)+ f_ot_x(x0+dx))/2;
-        nn++;
-    }
-    summT=summT*dx;
-    f(nn);
-    return printf("T %d\n",summT);
+    PrintTabl(f, 4);
+    return 0;
 }
 int main() {
     setlocale(LC_ALL, "Russian");
-    ItogPrint();
+    ItogPrint_Rect();
+    ItogPrint_Trap();
     printf("\n");
-
-
-
-    int Nmain=1;
 
     printf("классика %lf\n", integr(1,3));
     //printf("pr %d\n", IntRect(for_IntRectrap,1,3,0.1,n));
     //printf("tr %d\n", IntTrap(for_IntRectrap,1,3,0.1,n));
-    Epsilon(0);
+    for(int i;i<4;i++){
+        printf("R %lf \n", Epsilon(IntRect,i));
+        printf("T %lf \n", Epsilon(IntTrap,i));
+    }
 
+    printf("%d \n",n[0]);
     return 0;
 }
