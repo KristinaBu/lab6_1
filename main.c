@@ -108,7 +108,7 @@ int ItogPrint() {
     PrintTabl(f, 4);
     return 0;
 }
-
+int n[]={0,0,0,0};
 
 typedef double (*TPF)(double); //подынтегр функция
 
@@ -120,22 +120,22 @@ double f_ot_x(double x0){
 // f - ловушка-шаблон для вызываемой в intrect функции, которая
 //будет использовать полученные тут значения. Принимает дабл, выдает дабл
 //вывод суммы для шаблона
-int IntRect(TPF f, double a, double b, double eps, int* n){
+double IntRect(TPF f, double a, double b, double dx, int* n){
 
     double sumR=0;
     int nn=0;
-    for(double x0=a;x0<b;x0=x0+eps){
-        sumR=sumR+f_ot_x(x0+eps/2);
+    for(double x0=a;x0<b;x0=x0+dx){
+        sumR=sumR+f_ot_x(x0+dx/2);
         nn++;
     }
-    sumR=sumR*eps;
+    sumR=sumR*dx;
 
     f(nn);
-    return sumR; //
+    return printf("R %d\n",sumR); //
 }
 
 double for_IntRectrap(double nn){
-    printf("%lf\n",nn);
+    printf("nn %lf\n",nn);
 }
 
 //рассчет оределенного интеграла, классика
@@ -147,41 +147,50 @@ double EpsMas[]={0.01, 0.001, 0.0001, 0.00001, 0.000001};
 
 //dx=(a-b)/n
 //Рассчет шага, i1,i2 - уже полученные интегралы со своими шагами
-double Epsilon(double i1, double i2,int epsnom){
+void Epsilon(int epsnom){
     int r;
-    i1= IntRect();
+    double i1,i2,dx1=1;
+    i1=IntRect(for_IntRectrap,1,3,dx1,n);
+    i1=IntRect(for_IntRectrap,1,3,dx1/2,n);
+
+    int k=0;
     while ((fabs(i1-i2)/3)>EpsMas[epsnom]){
         i1=i2;
+        dx1=dx1/2;
+        i1=IntRect(for_IntRectrap,1,3,dx1,n);
+        i1=IntRect(for_IntRectrap,1,3,dx1/2,n);
+        k=k+1;
+        printf("k %d\n",k);
         //призыв нового исчисления интегралов, но с делением дельта на 2
     } //эпсилон в шаге dx/2; epsnom - номер точности в массиве
 
 }
 
 
-int IntTrap(TPF f, double a, double b, double eps, int* n){
+double IntTrap(TPF f, double a, double b, double dx, int* n){
     double summT=0;
     int nn=0;
-    for(double x0=a;x0<b;x0=x0+eps){
-        summT=summT+(f_ot_x(x0)+ f_ot_x(x0+eps))/2;
+    for(double x0=a;x0<b;x0=x0+dx){
+        summT=summT+(f_ot_x(x0)+ f_ot_x(x0+dx))/2;
         nn++;
     }
-    summT=summT*eps;
-    f(summT);
-    return nn;
+    summT=summT*dx;
+    f(nn);
+    return printf("T %d\n",summT);
 }
 int main() {
     setlocale(LC_ALL, "Russian");
     ItogPrint();
     printf("\n");
 
-    int n[]={0,0,0,0};
+
 
     int Nmain=1;
 
     printf("классика %lf\n", integr(1,3));
-    printf("pr %d\n", IntRect(for_IntRectrap,1,3,0.1,n));
-    printf("tr %d\n", IntTrap(for_IntRectrap,1,3,0.1,n));
-
+    //printf("pr %d\n", IntRect(for_IntRectrap,1,3,0.1,n));
+    //printf("tr %d\n", IntTrap(for_IntRectrap,1,3,0.1,n));
+    Epsilon(0);
 
     return 0;
 }
