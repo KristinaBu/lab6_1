@@ -2,6 +2,8 @@
 #include <locale.h>
 #include <string.h>
 #include <math.h>
+#include <stdlib.h>
+#include <time.h>
 #define COLUMN_NUMBER 4 // число столбцов таблицы
 struct I_print {        // данные для печати результатов интегрирования
     char *name;         // название функции
@@ -74,9 +76,13 @@ void PrintTabl(struct I_print i_prn[], int k) {
 }
 
 
+// Генерировать случайного целого числа из диапозона [lower, upper].
+int iRandom(int lower, int upper) {
+    int num = (rand() % (upper - lower + 1)) + lower;
+    return num;
+}
 
-
-int nomn=0;
+int nomn=1;
 int n[]={9,0,0,0}; //склад количеств прямоугольников и трапеций при вычислении сумм
 //склад точностей
 
@@ -85,6 +91,9 @@ typedef double (*for_eps)(TPF f, double a, double b, double dx, int* n);
 
 
 //подынтегральные функции для х0:
+double f_ot_x0(double x0){
+    return x0*x0;
+}
 double f_ot_x1(double x0){
     return x0;
 }
@@ -110,8 +119,8 @@ double IntRect(TPF f, double a, double b,double dx, int* n){
     sumR=sumR*dx;
 
     //f(nn);
-    nomn=nn;
-    n[0]=nomn;
+    //nomn=nn;
+    //n[0]=nomn;
     //printf("%d %d\n",nn,n[0]);
     return sumR; //
 }//глобальная перемена N
@@ -121,16 +130,20 @@ double IntTrap(TPF f, double a, double b, double dx, int* n){
     double summT=0;
     int nn=0; //количество итераций !!!!!!!!!!!!!!!!!!! замена на фор и вывод ост суммы
     for(double x0=a;x0<b;x0=x0+dx){
-        summT=summT+(f_ot_x1(x0)+ f(x0+dx))/2;
+        summT=summT+(f(x0)+ f(x0+dx))/2;
         nn++;
     }
     summT=summT*dx;
-    n[0]=nomn;
+    //nomn=nn;
+    //n[0]=nomn;
     //printf("%d %d\n",nn,n[0]);
     return summT;
 }//глобальная перемена N
 
 //рассчет оределенного интеграла, классическая формула
+double integr0(double a,double b){
+    return (b*b*b - a*a*a)/3.0;
+}
 double integr1(double a,double b){
     return (b*b - a*a)/2.0;
 }
@@ -151,8 +164,6 @@ double integr4(double a,double b){
 double Epsilon(for_eps q,TPF f,int epsnom){ //указатель на функцию суммы прямоугольников или трапеций, epsnom-номер точности в массиве
     double EpsMas[5]={0.01, 0.001, 0.0001, 0.00001, 0.000001};
     double dx1=1;
-    //double dx1=EpsMas[epsnom];
-    //double dx1=1/(pow(2,epsnom-2));
     double i1=q(f,1,3,dx1,n); // сумма интеграла с дельта
     dx1=dx1/2;
     double i2=q(f,1,3,dx1,n); //сумма интеграла с дельта/2
@@ -160,14 +171,14 @@ double Epsilon(for_eps q,TPF f,int epsnom){ //указатель на функц
 
     int k=0;
     while ((fabs(i1-i2)/3)>EpsMas[epsnom]){
-
+        nomn=nomn*2;
         i1=i2;
-        //printf("i1 i2 %lf %lf dx1 %lf\n",i1,i2,dx1);
+        //printf("i1 i2 %lf %lf       dx1 %lf\n",i1,i2,dx1);
         dx1=dx1/2;
         i2=q(f,1,3,dx1,n);//призыв нового исчисления интегралов, но с делением дельта на 2
         k=k+1;
         //printf("k %d\n",k);
-        //printf("%d %lf %lf dx1 %lf %lf\n",k,i1,i2,dx1,(fabs(i1-i2)/3));
+        //printf("%d     %lf %lf     dx1 %lf %lf\n",k,i1,i2,dx1,(fabs(i1-i2)/3));
 
     } //эпсилон в шаге dx/2;
     return i2;//вывод суммы с нужной точностью
@@ -191,25 +202,25 @@ int ItogPrint_Rect(int epsnomm0) {
     a.name = (char *) "y=x*x";
     a.i_sum = Epsilon(IntRect,f_ot_x1,epsnomm0);
     a.i_toch = integr1(1,3);
-    a.n = 3;
+    a.n = nomn;
 
     struct I_print b;
     b.name = (char *) "y=sin(22x)";
     b.i_sum = Epsilon(IntRect,f_ot_x2,epsnomm0);;
     b.i_toch = integr2(1,3);
-    b.n = 6;
+    b.n = nomn;
 
     struct I_print c;
     c.name = (char *) "y=x^4 ";
     c.i_sum = Epsilon(IntRect,f_ot_x3,epsnomm0);;
     c.i_toch = integr3(1,3);
-    c.n = 6555;
+    c.n = nomn;
 
     struct I_print d;
     d.name = (char *) "y=arctg(x))";
     d.i_sum = Epsilon(IntRect,f_ot_x4,epsnomm0);;
     d.i_toch = integr4(1,3);
-    d.n = 6;
+    d.n = nomn;
 
     struct I_print f[4];
     f[0] = a;
@@ -227,25 +238,25 @@ int ItogPrint_Trap(int epsnomm0) {
     a.name = (char *) "y=x*x";
     a.i_sum = Epsilon(IntTrap,f_ot_x1,epsnomm0);
     a.i_toch = integr1(1,3);
-    a.n = 3;
+    a.n = nomn;
 
     struct I_print b;
     b.name = (char *) "y=sin(22x)";
     b.i_sum = Epsilon(IntTrap,f_ot_x2,epsnomm0);;
     b.i_toch = integr2(1,3);
-    b.n = 6;
+    b.n = nomn;
 
     struct I_print c;
     c.name = (char *) "y=x^4 ";
     c.i_sum = Epsilon(IntTrap,f_ot_x3,epsnomm0);;
     c.i_toch = integr3(1,3);
-    c.n = 6555;
+    c.n = nomn;
 
     struct I_print d;
     d.name = (char *) "y=arctg(x))";
     d.i_sum = Epsilon(IntTrap,f_ot_x4,epsnomm0);;
     d.i_toch = integr4(1,3);
-    d.n = 6;
+    d.n = nomn;
 
     struct I_print f[4];
     f[0] = a;
@@ -259,18 +270,26 @@ int ItogPrint_Trap(int epsnomm0) {
 
 int main() {
     setlocale(LC_ALL, "Russian");
+
+    srand(time(0));
+    rand();
+    //int num = iRandom(0, upper);
+    srand(time(0));
+    rand();
+    //int num = iRandom(lower, upper);
+
     for (int Eps=0;Eps<5;Eps++) {
         ItogPrint_Rect(Eps);
         ItogPrint_Trap(Eps);
     }
     printf("\n");
+
     //вывод
 
-
-
-    //printf("классика %lf\n", integr1(1,3));
-
-    //printf("R %lf \n", Epsilon(IntRect,4));
+    //printf("классика %lf\n", integr0(1,3));
+    //ItogPrint_Trap(1);
+    //integr2(1,3);
+    //printf("R %lf \n", EpsilonT(IntTrap,f_ot_x0,4));
     //printf("T %lf \n", Epsilon(IntTrap,4));
 
 
